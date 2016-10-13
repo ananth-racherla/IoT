@@ -1,11 +1,15 @@
-﻿using System.Threading.Tasks;
+﻿using System.Text;
+using System.Threading.Tasks;
 using Windows.UI.Xaml;
+using ppatierno.AzureSBLite.Messaging;
 
 namespace Stepper_Motor
 {
     public sealed partial class MainPage
     {
         private readonly Uln2003Driver _uln2003Driver;
+        static string eventHubName = "";
+        static string connectionString = "";
 
         public MainPage()
         {
@@ -21,8 +25,14 @@ namespace Stepper_Motor
         {
             Task.Run(async () =>
             {
-                await _uln2003Driver.TurnAsync(90, TurnDirection.Left);
-                await _uln2003Driver.TurnAsync(90, TurnDirection.Right);
+                var eventHubClient = EventHubClient.CreateFromConnectionString(connectionString, eventHubName);
+                for (var i = 0; i < 10; i++)
+                {
+                    eventHubClient.Send(new EventData(Encoding.UTF8.GetBytes($"Turning left 360 degrees. Try {i+1}")));
+                    await _uln2003Driver.TurnAsync(360, TurnDirection.Left);
+                    eventHubClient.Send(new EventData(Encoding.UTF8.GetBytes($"Turning right 360 degrees. Try {i + 1}")));
+                    await _uln2003Driver.TurnAsync(360, TurnDirection.Right);
+                }
             });
         }
 
